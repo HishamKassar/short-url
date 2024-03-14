@@ -3,6 +3,7 @@ import { UrlsService } from './urls.service';
 import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager'; // Import CACHE_MANAGER token
 
 const mockUrl1 = { _id: 'url1Id', originalUrl: 'https://example1.com', shortUrl: 'abc123', accessCount: 2 };
 const mockUrl2 = { _id: 'url2Id', originalUrl: 'https://example2.com', shortUrl: 'def456', accessCount: 1 };
@@ -21,6 +22,11 @@ const mockStatModel = {
   aggregate: jest.fn()
 };
 
+const mockCacheManager = {
+  get: jest.fn(),
+  set: jest.fn(),
+};
+
 describe('UrlsService', () => {
   let service: UrlsService;
   let urlModel: Model<any>;
@@ -32,6 +38,7 @@ describe('UrlsService', () => {
         UrlsService,
         { provide: getModelToken('Url'), useValue: mockUrlModel },
         { provide: getModelToken('Stat'), useValue: mockStatModel },
+        { provide: CACHE_MANAGER, useValue: mockCacheManager },
       ],
     }).compile();
 
