@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Param, Redirect, Req} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Redirect, Req, Put, HttpCode} from '@nestjs/common';
 import { UrlsService } from './urls.service';
-import { ShortenUrlDto, RedirectUrlDto, UrlStatsDto } from './dto/url.dto';
+import { ShortenUrlDto, RedirectUrlDto, UrlStatsDto, AliasDto } from './dto/url.dto';
 import { Request } from 'express';
 import { ApiNotFoundResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
@@ -10,12 +10,22 @@ export class UrlsController {
   constructor(private readonly urlsService: UrlsService) {}
 
   @Post()
+  @HttpCode(200)
   @ApiOperation({ summary: 'Create short URL', description: 'Returns the new created short URL from any valid URL, the url should be something like https://example.com' })
   @ApiResponse({ status: 200, description: 'Returns the shortened URL' })
   @ApiResponse({ status: 400, description: 'Returns the error that happened' })
   async shortenUrl(@Body() shortenUrlDto: ShortenUrlDto, @Req() req: Request) {
     const shortUrl = await this.urlsService.shortenUrl(shortenUrlDto.originalUrl);
     return req.protocol + "://" + req.get('host') + req.originalUrl + "/" + shortUrl;
+  }
+
+  @Put(':shortUrl')
+  @HttpCode(200) 
+  @ApiOperation({ summary: 'Set alais for short URL', description: 'Set alais by user for the short URL to be used same as auto generated short URL' })
+  @ApiResponse({ status: 200, description: 'Returns the shortened URL' })
+  @ApiResponse({ status: 400, description: 'Returns the error that happened' })
+  async updateUrlAlias(@Param('shortUrl') shortUrl: string, @Body() aliasDto: AliasDto): Promise<void> {
+    await this.urlsService.updateUrlAlias(shortUrl, aliasDto.alias);
   }
 
   @Get(':shortUrl')
@@ -72,14 +82,18 @@ export class UrlsController {
       ]
     }
   })
-  async getUrls(): Promise<UrlStatsDto[]> {
+  async getUrls(@Req() req: Request): Promise<UrlStatsDto[]> {
     const urls = await this.urlsService.getUrls();
     
     const urlStatsDtoArray: UrlStatsDto[] = urls.map((urlStats) => {
-      const { originalUrl, shortUrl, accessCount, stats } = urlStats;    
+      
+      const { originalUrl, shortUrl, alias, accessCount, stats } = urlStats;   
+      const fullShortUrl = req.protocol + "://" + req.get('host') + req.originalUrl + "/" + shortUrl;
+      const fullAlais = req.protocol + "://" + req.get('host') + req.originalUrl + "/" + alias; 
       return {
         originalUrl,
-        shortUrl,
+        shortUrl: fullShortUrl,
+        alias: fullAlais,
         accessCount,
         stats
       };

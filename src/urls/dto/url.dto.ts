@@ -13,6 +13,11 @@ export class RedirectUrlDto {
     shortUrl: string;
 }
 
+export class AliasDto {
+    @ApiProperty()
+    alias: string;
+}
+
 export class StatGroupDto {
     [ip: string]: {
         count: number;
@@ -26,6 +31,9 @@ export class UrlStatsDto {
 
     @ApiProperty()
     shortUrl: string;
+
+    @ApiProperty()
+    alias: string;
 
     @ApiProperty()
     accessCount: number;

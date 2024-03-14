@@ -63,22 +63,31 @@ describe('UrlsService', () => {
 
   describe('redirectUrl', () => {
     it('should redirect to original URL and save stats', async () => {
-        const shortUrl = 'abc123';
-        const req = { ip: '127.0.0.1', headers: { referer: 'https://example.com', 'user-agent': 'TestAgent' } };
-        const url = { _id: 'someId', originalUrl: 'https://example.com', accessCount: 0 };
+      const shortUrl = 'abc123';
+      const req = { ip: '127.0.0.1', headers: { referer: 'https://example.com', 'user-agent': 'TestAgent' } };
+      const url = { _id: 'someId', originalUrl: 'https://example.com', accessCount: 0 };
   
-        const saveMock = jest.fn().mockResolvedValue(url);
-        const findOneMock = jest.fn().mockResolvedValue({ ...url, save: saveMock });
+      const saveMock = jest.fn().mockResolvedValue(url);
+      const findOneMock = jest.fn().mockResolvedValue({ ...url, save: saveMock });
   
-        mockUrlModel.findOne.mockImplementation(findOneMock);
-        mockStatModel.create.mockResolvedValue({});
+      mockUrlModel.findOne.mockImplementation(findOneMock);
+      mockStatModel.create.mockResolvedValue({});
   
-        const result = await service.redirectUrl(shortUrl, req as any);
+      const result = await service.redirectUrl(shortUrl, req as any);
   
-        expect(result).toEqual(url.originalUrl);
-        expect(mockUrlModel.findOne).toHaveBeenCalledWith({ shortUrl });
-        expect(saveMock).toHaveBeenCalled(); // Check if save method is called on the returned URL object
-        expect(mockStatModel.create).toHaveBeenCalled();
+      expect(result).toEqual(url.originalUrl);
+  
+      expect(mockUrlModel.findOne).toHaveBeenCalledWith({ $or: [{ shortUrl }, { alias: shortUrl }] });
+  
+      expect(saveMock).toHaveBeenCalled();
+  
+      expect(mockStatModel.create).toHaveBeenCalledWith({
+        urlId: url._id,
+        ip: req.ip,
+        referer: req.headers.referer,
+        agent: req.headers['user-agent'],
+        accessedAt: expect.any(Date)
+      });
     });
 
     it('should throw NotFoundException if URL not found', async () => {
@@ -88,7 +97,7 @@ describe('UrlsService', () => {
       mockUrlModel.findOne.mockResolvedValue(null);
 
       await expect(service.redirectUrl(shortUrl, req as any)).rejects.toThrow('URL not found');
-      expect(mockUrlModel.findOne).toHaveBeenCalledWith({ shortUrl });
+      expect(mockUrlModel.findOne).toHaveBeenCalledWith({ $or: [{ shortUrl }, { alias: shortUrl }]  });
     });
   });
 

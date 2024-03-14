@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UrlsController } from './urls.controller';
 import { UrlsService } from './urls.service';
-import { ShortenUrlDto, RedirectUrlDto, UrlStatsDto } from './dto/url.dto';
+import { ShortenUrlDto, RedirectUrlDto, UrlStatsDto, AliasDto } from './dto/url.dto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('UrlsController', () => {
@@ -15,6 +15,7 @@ describe('UrlsController', () => {
           provide: UrlsService,
           useValue: {
             shortenUrl: jest.fn(),
+            updateUrlAlias: jest.fn(),
             redirectUrl: jest.fn(),
             getUrls: jest.fn(),
           }
@@ -75,6 +76,38 @@ describe('UrlsController', () => {
         }
       });
     });
+
+    describe('updateUrlAlias', () => {
+      it('should call updateUrlAlias in service with correct parameters', async () => {
+        const shortUrl = 'abc123';
+        const alias = 'alias';
+        const aliasDto: AliasDto = { alias };
+  
+        await controller.updateUrlAlias(shortUrl, aliasDto);
+  
+        expect(service.updateUrlAlias).toHaveBeenCalledWith(shortUrl, alias);
+      });
+
+      it('should throw BadRequestException if alias already exists', async () => {
+        const shortUrl = 'abc123';
+        const alias = 'existingAlias';
+        const aliasDto: AliasDto = { alias };
+  
+        (service.updateUrlAlias as jest.Mock).mockRejectedValue(new BadRequestException());
+  
+        await expect(controller.updateUrlAlias(shortUrl, aliasDto)).rejects.toThrow(BadRequestException);
+      });
+
+      it('should throw NotFoundException if short URL does not exist', async () => {
+        const shortUrl = 'nonExistingShortUrl';
+        const alias = 'myalias';
+        const aliasDto: AliasDto = { alias };
+  
+        (service.updateUrlAlias as jest.Mock).mockRejectedValue(new NotFoundException());
+  
+        await expect(controller.updateUrlAlias(shortUrl, aliasDto)).rejects.toThrow(NotFoundException);
+      });
+    });
   
     describe('redirectUrl', () => {
       it('should call service.redirectUrl with correct arguments', async () => {
@@ -109,11 +142,14 @@ describe('UrlsController', () => {
     });
   
     describe('getUrls', () => {
+      const req: any = { protocol: 'http', get: jest.fn(), originalUrl: '/example' };
+
       it('should call service.getUrls and return URLs with stats', async () => {
         const urls: UrlStatsDto[] = [
           {
             originalUrl: 'https://example.com',
             shortUrl: 'abc123',
+            alias: 'test',
             accessCount: 5,
             stats: {
               '127.0.0.1': {
@@ -129,13 +165,35 @@ describe('UrlsController', () => {
             }
           }
         ];
+
+        const resultUrls: UrlStatsDto[] = [
+          {
+            originalUrl: 'https://example.com',
+            shortUrl: req.protocol + "://" + req.get('host') + req.originalUrl + "/" + 'abc123',
+            alias: req.protocol + "://" + req.get('host') + req.originalUrl + "/" + 'test',
+            accessCount: 5,
+            stats: {
+              '127.0.0.1': {
+                count: 3,
+                result: [
+                  {
+                    agent: 'Mozilla',
+                    referer: null,
+                    accessedAt: new Date('2024-03-13T12:00:00.000Z')
+                  }
+                ]
+              }
+            }
+          }
+        ];
+
         jest.spyOn(service, 'getUrls').mockResolvedValue(urls);
-        expect(await controller.getUrls()).toEqual(urls);
+        expect(await controller.getUrls(req)).toEqual(resultUrls);
       });
 
       it('should handle empty array in getUrls', async () => {
         jest.spyOn(service, 'getUrls').mockResolvedValue([]);
-        const result = await controller.getUrls();
+        const result = await controller.getUrls(req);
         expect(result).toEqual([]);
       });
 

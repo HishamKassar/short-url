@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Url, UrlStats } from './interfaces/url.interface';
@@ -18,16 +18,42 @@ export class UrlsService {
     const createdUrl = await this.urlModel.create({ originalUrl, shortUrl });
     return createdUrl.shortUrl;
   }
+  
+  async updateUrlAlias(shortUrl: string, alias: string): Promise<void> {
+    const urlAlias = await this.urlModel.findOne({ alias });
+    if (urlAlias && urlAlias.shortUrl != shortUrl) {
+      throw new BadRequestException('Alias already used before');
+    }
 
-  async redirectUrl(shortUrl: string, req:Request): Promise<string> {
-    const url = await this.urlModel.findOne({ shortUrl });
+    const url = await this.urlModel.findOneAndUpdate(
+      { shortUrl },
+      { alias: alias },
+      { new: true }
+    );
+
+    if (!url) {
+      throw new NotFoundException('URL not found');
+    }
+  }
+
+  async redirectUrl(urlIdentifier: string, req:Request): Promise<string> {
+    const url = await this.urlModel.findOne({
+      $or: [{ shortUrl: urlIdentifier }, { alias: urlIdentifier }],
+    });
+
     if (!url) {
       throw new NotFoundException('URL not found');
     }
     url.accessCount++;
     await url.save();
 
-    await this.statModel.create({ urlId: url._id, ip: req.ip, referer: req.headers.referer, agent: req.headers['user-agent'], accessedAt: new Date() });
+    await this.statModel.create({
+      urlId: url._id,
+      ip: req.ip,
+      referer: req.headers.referer,
+      agent: req.headers['user-agent'],
+      accessedAt: new Date()
+    });
 
     return url.originalUrl;
   }
@@ -65,6 +91,7 @@ export class UrlsService {
       return {
           originalUrl: url.originalUrl,
           shortUrl: url.shortUrl,
+          alias: url.alias,
           accessCount: url.accessCount,
           stats: urlStats
       };
