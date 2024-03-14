@@ -21,22 +21,32 @@ export class UrlsController {
 
   @Put(':shortUrl')
   @HttpCode(200) 
-  @ApiOperation({ summary: 'Set alais for short URL', description: 'Set alais by user for the short URL to be used same as auto generated short URL' })
+  @ApiOperation({ summary: 'Set alais for short URL', description: 'Set alais by user for the short URL to be used same as auto generated short URL. You can pass shortUrl or Alias' })
   @ApiResponse({ status: 200, description: 'Returns nothing' })
   @ApiResponse({ status: 400, description: 'Returns the error that happened' })
   @ApiResponse({ status: 404, description: 'Returns not found message if URL is not exist' })
-  async updateUrlAlias(@Param('shortUrl') shortUrl: string, @Body() aliasDto: AliasDto): Promise<void> {
-    await this.urlsService.updateUrlAlias(shortUrl, aliasDto.alias);
+  async updateUrlAlias(@Param('shortUrl') shortUrl: string, @Body() aliasDto: AliasDto, @Req() req: Request): Promise<void> {
+    var shortUrlToPass = shortUrl;
+    const hostUrl = req.protocol + "://" + req.get('host') + "/api/v1/urls/";
+    if (shortUrl.includes(hostUrl)) {
+      shortUrlToPass = shortUrl.replace(hostUrl, '');
+    }
+    await this.urlsService.updateUrlAlias(shortUrlToPass, aliasDto.alias);
   }
 
   @Delete(':shortUrl')
   @HttpCode(200) 
-  @ApiOperation({ summary: 'Delete short URL', description: 'Soft delete for short URL, so the URL still in the database' })
+  @ApiOperation({ summary: 'Delete short URL', description: 'Soft delete for short URL, so the URL still in the database. You can pass shortUrl or Alias' })
   @ApiResponse({ status: 200, description: 'Returns nothing' })
   @ApiResponse({ status: 400, description: 'Returns the error that happened' })
   @ApiResponse({ status: 404, description: 'Returns not found message if URL is not exist' })
-  async deleteUrl(@Param('shortUrl') shortUrl: string): Promise<void> {
-    await this.urlsService.deleteUrl(shortUrl);
+  async deleteUrl(@Param('shortUrl') shortUrl: string, @Req() req: Request): Promise<void> {
+    var shortUrlToPass = shortUrl;
+    const hostUrl = req.protocol + "://" + req.get('host') + "/api/v1/urls/";
+    if (shortUrl.includes(hostUrl)) {
+      shortUrlToPass = shortUrl.replace(hostUrl, '');
+    }
+    await this.urlsService.deleteUrl(shortUrlToPass);
   }
 
   @Get(':shortUrl')

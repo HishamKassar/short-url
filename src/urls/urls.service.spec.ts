@@ -174,7 +174,12 @@ describe('UrlsService', () => {
   
       await expect(service.updateUrlAlias(shortUrl, alias)).resolves.not.toThrow();
   
-      expect(mockUrlModel.findOne).toHaveBeenCalledWith({ alias });
+      expect(mockUrlModel.findOne).toHaveBeenCalledWith({
+        $and: [
+          { $or: [{ shortUrl }, { alias: shortUrl }] },
+          { deleted: { $ne: true } }
+        ]
+      });
       expect(mockUrlModel.findOneAndUpdate).toHaveBeenCalledWith(
         { shortUrl },
         { alias },
@@ -213,7 +218,12 @@ describe('UrlsService', () => {
   
       await service.deleteUrl(shortUrl);
   
-      expect(mockUrlModel.findOne).toHaveBeenCalledWith({ shortUrl });
+      expect(mockUrlModel.findOne).toHaveBeenCalledWith({
+        $and: [
+          { $or: [{ shortUrl }, { alias: shortUrl }] },
+          { deleted: { $ne: true } }
+        ]
+      });
       expect(url.deleted).toBe(true);
       expect(url.save).toHaveBeenCalled();
     });

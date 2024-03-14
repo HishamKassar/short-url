@@ -20,7 +20,12 @@ export class UrlsService {
   }
   
   async updateUrlAlias(shortUrl: string, alias: string): Promise<void> {
-    const urlAlias = await this.urlModel.findOne({ alias });
+    const urlAlias = await this.urlModel.findOne({
+      $and: [
+        { $or: [{ shortUrl: shortUrl }, { alias: shortUrl }] },
+        { deleted: { $ne: true } }
+      ]
+    });
     if (urlAlias && urlAlias.shortUrl != shortUrl) {
       throw new BadRequestException('Alias already used before');
     }
@@ -37,10 +42,17 @@ export class UrlsService {
   }
 
   async deleteUrl(shortUrl: string): Promise<void> {
-    const url = await this.urlModel.findOne({ shortUrl });
-    if (!url) {
+    const url = await this.urlModel.findOne({
+      $and: [
+        { $or: [{ shortUrl: shortUrl }, { alias: shortUrl }] },
+        { deleted: { $ne: true } }
+      ]
+    });
+
+    if (!url || url.deleted) {
       throw new NotFoundException('URL not found');
     }
+
     url.deleted = true;
     await url.save();
   }

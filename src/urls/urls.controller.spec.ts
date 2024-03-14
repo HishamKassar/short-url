@@ -83,8 +83,9 @@ describe('UrlsController', () => {
         const shortUrl = 'abc123';
         const alias = 'alias';
         const aliasDto: AliasDto = { alias };
-  
-        await controller.updateUrlAlias(shortUrl, aliasDto);
+        const req: any = { protocol: 'http', get: jest.fn(), originalUrl: '/example' };
+
+        await controller.updateUrlAlias(shortUrl, aliasDto, req);
   
         expect(service.updateUrlAlias).toHaveBeenCalledWith(shortUrl, alias);
       });
@@ -93,40 +94,44 @@ describe('UrlsController', () => {
         const shortUrl = 'abc123';
         const alias = 'existingAlias';
         const aliasDto: AliasDto = { alias };
-  
+        const req: any = { protocol: 'http', get: jest.fn(), originalUrl: '/example' };
+
         (service.updateUrlAlias as jest.Mock).mockRejectedValue(new BadRequestException());
   
-        await expect(controller.updateUrlAlias(shortUrl, aliasDto)).rejects.toThrow(BadRequestException);
+        await expect(controller.updateUrlAlias(shortUrl, aliasDto, req)).rejects.toThrow(BadRequestException);
       });
 
       it('should throw NotFoundException if short URL does not exist', async () => {
         const shortUrl = 'nonExistingShortUrl';
         const alias = 'myalias';
         const aliasDto: AliasDto = { alias };
-  
+        const req: any = { protocol: 'http', get: jest.fn(), originalUrl: '/example' };
+
         (service.updateUrlAlias as jest.Mock).mockRejectedValue(new NotFoundException());
   
-        await expect(controller.updateUrlAlias(shortUrl, aliasDto)).rejects.toThrow(NotFoundException);
+        await expect(controller.updateUrlAlias(shortUrl, aliasDto, req)).rejects.toThrow(NotFoundException);
       });
     });
 
     describe('deleteUrl', () => {
       it('should delete URL successfully', async () => {
         const shortUrl = 'abc123';
-    
+        const req: any = { protocol: 'http', get: jest.fn(), originalUrl: '/example' };
+
         jest.spyOn(service, 'deleteUrl').mockResolvedValue(undefined);
     
-        await controller.deleteUrl(shortUrl);
+        await controller.deleteUrl(shortUrl, req);
     
         expect(service.deleteUrl).toHaveBeenCalledWith(shortUrl);
       });
 
       it('should throw NotFoundException if URL not found', async () => {
         const shortUrl = 'abc123';
-    
+        const req: any = { protocol: 'http', get: jest.fn(), originalUrl: '/example' };
+
         jest.spyOn(service, 'deleteUrl').mockRejectedValue(new NotFoundException());
     
-        await expect(controller.deleteUrl(shortUrl)).rejects.toThrowError(NotFoundException);
+        await expect(controller.deleteUrl(shortUrl, req)).rejects.toThrowError(NotFoundException);
       });
     });
   
