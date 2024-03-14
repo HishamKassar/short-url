@@ -29,7 +29,7 @@ export class UrlsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all URLs in the system with statistics', description: 'Returns all the URLs in the system with statistics about each URL, like the total visit for the link and a list of IPs for the users who visited this link and how many times and when, also with information from where like using chrome or firefox' })
+  @ApiOperation({ summary: 'Get all URLs in the system with statistics', description: 'Returns all the URLs in the system with statistics about each URL, like the total visits for the link and a list of IPs for the users who visited this link and how many times and when, also with information from where like using Chrome or Firefox' })
   @ApiResponse({
     status: 200,
     description: 'Returns URLs with stats',
