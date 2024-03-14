@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UrlsService } from './urls.service';
 import { getModelToken } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 const mockUrl1 = { _id: 'url1Id', originalUrl: 'https://example1.com', shortUrl: 'abc123', accessCount: 2 };
 const mockUrl2 = { _id: 'url2Id', originalUrl: 'https://example2.com', shortUrl: 'def456', accessCount: 1 };
@@ -9,6 +10,7 @@ const mockUrl2 = { _id: 'url2Id', originalUrl: 'https://example2.com', shortUrl:
 // Mocking the URL and Stat models
 const mockUrlModel = {
   findOne: jest.fn(),
+  findOneAndUpdate: jest.fn(),
   find: jest.fn().mockReturnThis(),
   exec: jest.fn().mockResolvedValue([mockUrl1, mockUrl2]),
   create: jest.fn(),
@@ -77,8 +79,13 @@ describe('UrlsService', () => {
   
       expect(result).toEqual(url.originalUrl);
   
-      expect(mockUrlModel.findOne).toHaveBeenCalledWith({ $or: [{ shortUrl }, { alias: shortUrl }] });
-  
+      expect(mockUrlModel.findOne).toHaveBeenCalledWith({
+        $and: [
+          { $or: [{ shortUrl }, { alias: shortUrl }] },
+          { deleted: { $ne: true } }
+        ]
+      });
+
       expect(saveMock).toHaveBeenCalled();
   
       expect(mockStatModel.create).toHaveBeenCalledWith({
@@ -97,7 +104,12 @@ describe('UrlsService', () => {
       mockUrlModel.findOne.mockResolvedValue(null);
 
       await expect(service.redirectUrl(shortUrl, req as any)).rejects.toThrow('URL not found');
-      expect(mockUrlModel.findOne).toHaveBeenCalledWith({ $or: [{ shortUrl }, { alias: shortUrl }]  });
+      expect(mockUrlModel.findOne).toHaveBeenCalledWith({
+        $and: [
+          { $or: [{ shortUrl }, { alias: shortUrl }] },
+          { deleted: { $ne: true } }
+        ]
+      });
     });
   });
 
@@ -147,6 +159,73 @@ describe('UrlsService', () => {
       expect(mockUrlModel.find).toHaveBeenCalled();
       expect(mockStatModel.aggregate).toHaveBeenCalled();
     });
+  });
+
+  describe('updateUrlAlias', () => {
+    it('should update URL alias', async () => {
+      const shortUrl = 'abc123';
+      const alias = 'newAlias';
+      const existingUrl = { shortUrl, alias: 'oldAlias' };
+  
+      mockUrlModel.findOne.mockResolvedValue(existingUrl);
+  
+      const updatedUrl = { shortUrl, alias };
+      mockUrlModel.findOneAndUpdate.mockResolvedValue(updatedUrl);
+  
+      await expect(service.updateUrlAlias(shortUrl, alias)).resolves.not.toThrow();
+  
+      expect(mockUrlModel.findOne).toHaveBeenCalledWith({ alias });
+      expect(mockUrlModel.findOneAndUpdate).toHaveBeenCalledWith(
+        { shortUrl },
+        { alias },
+        { new: true }
+      );
+    });
+
+    it('should throw BadRequestException if alias already used before', async () => {
+      const shortUrl = 'abc123';
+      const alias = 'existingAlias';
+      const urlAlias = { _id: 'someId', shortUrl: 'anotherShortUrl', alias: 'existingAlias' };
+  
+      mockUrlModel.findOne.mockResolvedValue(urlAlias);
+  
+      await expect(service.updateUrlAlias(shortUrl, alias)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException if URL not found', async () => {
+      const shortUrl = 'abc123';
+      const alias = 'newAlias';
+  
+      mockUrlModel.findOne.mockResolvedValue(null);
+      mockUrlModel.findOneAndUpdate.mockResolvedValue(null);
+
+      await expect(service.updateUrlAlias(shortUrl, alias)).rejects.toThrow(NotFoundException);
+    });
+
+  });
+
+  describe('deleteUrl', () => {
+    it('should delete URL successfully', async () => {
+      const shortUrl = 'abc123';
+      const url = { _id: 'someId', shortUrl, deleted: false, save: jest.fn() };
+  
+      mockUrlModel.findOne.mockResolvedValue(url);
+  
+      await service.deleteUrl(shortUrl);
+  
+      expect(mockUrlModel.findOne).toHaveBeenCalledWith({ shortUrl });
+      expect(url.deleted).toBe(true);
+      expect(url.save).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if URL not found', async () => {
+      const shortUrl = 'abc123';
+  
+      mockUrlModel.findOne.mockResolvedValue(null);
+  
+      await expect(service.deleteUrl(shortUrl)).rejects.toThrowError(NotFoundException);
+    });
+
   });
 
 });

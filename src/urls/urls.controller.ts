@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Param, Redirect, Req, Put, HttpCode} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Redirect, Req, Put, HttpCode, Delete, Res, NotFoundException} from '@nestjs/common';
 import { UrlsService } from './urls.service';
 import { ShortenUrlDto, RedirectUrlDto, UrlStatsDto, AliasDto } from './dto/url.dto';
 import { Request } from 'express';
-import { ApiNotFoundResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('URLs')
 @Controller('api/v1/urls')
@@ -22,20 +22,39 @@ export class UrlsController {
   @Put(':shortUrl')
   @HttpCode(200) 
   @ApiOperation({ summary: 'Set alais for short URL', description: 'Set alais by user for the short URL to be used same as auto generated short URL' })
-  @ApiResponse({ status: 200, description: 'Returns the shortened URL' })
+  @ApiResponse({ status: 200, description: 'Returns nothing' })
   @ApiResponse({ status: 400, description: 'Returns the error that happened' })
+  @ApiResponse({ status: 404, description: 'Returns not found message if URL is not exist' })
   async updateUrlAlias(@Param('shortUrl') shortUrl: string, @Body() aliasDto: AliasDto): Promise<void> {
     await this.urlsService.updateUrlAlias(shortUrl, aliasDto.alias);
   }
 
+  @Delete(':shortUrl')
+  @HttpCode(200) 
+  @ApiOperation({ summary: 'Delete short URL', description: 'Soft delete for short URL, so the URL still in the database' })
+  @ApiResponse({ status: 200, description: 'Returns nothing' })
+  @ApiResponse({ status: 400, description: 'Returns the error that happened' })
+  @ApiResponse({ status: 404, description: 'Returns not found message if URL is not exist' })
+  async deleteUrl(@Param('shortUrl') shortUrl: string): Promise<void> {
+    await this.urlsService.deleteUrl(shortUrl);
+  }
+
   @Get(':shortUrl')
   @ApiOperation({ summary: 'Redirect from short URL to original URL', description: 'This API will automaticity redirect the user to the original URL, it will not work on Swagger because of the redirect, it will work only on the browser' })
-  @ApiResponse({ status: 302, description: 'Redirects to the original URL' })
-  @ApiNotFoundResponse({ status: 404, description: 'Returns not found error if the URL is not exist' })
+  @ApiResponse({ status: 302, description: 'Redirects to the original URL, and in case the url not exist it will redirect the user to not found page' })
   @Redirect()
   async redirectUrl(@Param() redirectUrlDto: RedirectUrlDto, @Req() req: Request) {
-    const originalUrl = await this.urlsService.redirectUrl(redirectUrlDto.shortUrl, req);
-    return { url: originalUrl, statusCode: 302 };
+    try{
+      const originalUrl = await this.urlsService.redirectUrl(redirectUrlDto.shortUrl, req);
+      return { url: originalUrl, statusCode: 302 };
+    }
+    catch (error) {
+      if (error as NotFoundException) {
+        const notFoundHtml = req.protocol + "://" + req.get('host') + "/404.html";
+        return { url: notFoundHtml, statusCode: 302 };
+      }
+      throw error;
+    }
   }
 
   @Get()

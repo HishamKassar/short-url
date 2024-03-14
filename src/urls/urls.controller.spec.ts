@@ -16,6 +16,7 @@ describe('UrlsController', () => {
           useValue: {
             shortenUrl: jest.fn(),
             updateUrlAlias: jest.fn(),
+            deleteUrl: jest.fn(),
             redirectUrl: jest.fn(),
             getUrls: jest.fn(),
           }
@@ -108,6 +109,26 @@ describe('UrlsController', () => {
         await expect(controller.updateUrlAlias(shortUrl, aliasDto)).rejects.toThrow(NotFoundException);
       });
     });
+
+    describe('deleteUrl', () => {
+      it('should delete URL successfully', async () => {
+        const shortUrl = 'abc123';
+    
+        jest.spyOn(service, 'deleteUrl').mockResolvedValue(undefined);
+    
+        await controller.deleteUrl(shortUrl);
+    
+        expect(service.deleteUrl).toHaveBeenCalledWith(shortUrl);
+      });
+
+      it('should throw NotFoundException if URL not found', async () => {
+        const shortUrl = 'abc123';
+    
+        jest.spyOn(service, 'deleteUrl').mockRejectedValue(new NotFoundException());
+    
+        await expect(controller.deleteUrl(shortUrl)).rejects.toThrowError(NotFoundException);
+      });
+    });
   
     describe('redirectUrl', () => {
       it('should call service.redirectUrl with correct arguments', async () => {
@@ -129,15 +150,13 @@ describe('UrlsController', () => {
   
       it('should handle NotFoundException from service', async () => {
         const dto: RedirectUrlDto = { shortUrl: 'abc123' };
-        const req: any = { ip: '127.0.0.1' };
+        const req: any = { protocol: 'http', get: jest.fn(), originalUrl: '/example' };
         jest.spyOn(service, 'redirectUrl').mockRejectedValue(new NotFoundException());
-        expect(controller.redirectUrl(dto, req)).rejects.toThrow(NotFoundException);
-      });
 
-      it('should not expose sensitive information in error messages', async () => {
-        const dto: RedirectUrlDto = { shortUrl: 'nonexistent' };
-        jest.spyOn(service, 'redirectUrl').mockRejectedValue(new NotFoundException('URL not found'));
-        await expect(controller.redirectUrl(dto, {} as any)).rejects.toThrow('URL not found');
+        const result = await controller.redirectUrl(dto, req);
+
+        const notFoundHtml = req.protocol + "://" + req.get('host') + "/404.html";
+        expect(result).toEqual({ url: notFoundHtml, statusCode: 302 });
       });
     });
   

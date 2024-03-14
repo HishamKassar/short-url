@@ -2,10 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import * as express from 'express';
+import { join } from 'path';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.use(express.static(join(__dirname, '..', 'public')));
   const options = new DocumentBuilder()
   .setTitle('URL Shortener API')
   .setDescription('API for shortening URLs and tracking statistics')

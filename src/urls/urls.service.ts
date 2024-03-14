@@ -36,14 +36,27 @@ export class UrlsService {
     }
   }
 
-  async redirectUrl(urlIdentifier: string, req:Request): Promise<string> {
-    const url = await this.urlModel.findOne({
-      $or: [{ shortUrl: urlIdentifier }, { alias: urlIdentifier }],
-    });
-
+  async deleteUrl(shortUrl: string): Promise<void> {
+    const url = await this.urlModel.findOne({ shortUrl });
     if (!url) {
       throw new NotFoundException('URL not found');
     }
+    url.deleted = true;
+    await url.save();
+  }
+
+  async redirectUrl(urlIdentifier: string, req:Request): Promise<string> {
+    const url = await this.urlModel.findOne({
+      $and: [
+        { $or: [{ shortUrl: urlIdentifier }, { alias: urlIdentifier }] },
+        { deleted: { $ne: true } }
+      ]
+    });
+
+    if (!url || url.deleted) {
+      throw new NotFoundException('URL not found');
+    }
+    
     url.accessCount++;
     await url.save();
 
