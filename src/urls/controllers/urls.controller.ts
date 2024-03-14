@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Redirect, Req, Put, HttpCode, Delete, Res, NotFoundException, ForbiddenException} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Redirect, Req, Put, HttpCode, Delete, Res, NotFoundException, ForbiddenException, GoneException} from '@nestjs/common';
 import { UrlsService } from '../services/urls.service';
 import { ShortenUrlDto, RedirectUrlDto, UrlStatsDto, AliasDto } from '../dto/url.dto';
 import { Request } from 'express';
@@ -65,6 +65,9 @@ export class UrlsController {
       } else if (error instanceof ForbiddenException) {
         const rateLimitHtml = req.protocol + "://" + req.get('host') + "/RateLimit.html";
         return { url: rateLimitHtml, statusCode: 302 };
+      } else if (error instanceof GoneException) {
+        const goneHtml = req.protocol + "://" + req.get('host') + "/410.html";
+        return { url: goneHtml, statusCode: 302 };
       }
       throw error;
     }
@@ -121,7 +124,7 @@ export class UrlsController {
       
       const { originalUrl, shortUrl, alias, accessCount, deleted, rateLimit, stats } = urlStats;   
       const fullShortUrl = req.protocol + "://" + req.get('host') + req.originalUrl + "/" + shortUrl;
-      const fullAlais = req.protocol + "://" + req.get('host') + req.originalUrl + "/" + alias; 
+      const fullAlais = alias ? req.protocol + "://" + req.get('host') + req.originalUrl + "/" + alias : null; 
       return {
         originalUrl,
         shortUrl: fullShortUrl,

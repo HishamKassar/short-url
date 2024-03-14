@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, GoneException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Url, UrlStats } from '../interfaces/url.interface';
@@ -67,14 +67,15 @@ export class UrlsService {
     }
 
     const url = await this.urlModel.findOne({
-      $and: [
-        { $or: [{ shortUrl: urlIdentifier }, { alias: urlIdentifier }] },
-        { deleted: { $ne: true } }
-      ]
+      $or: [{ shortUrl: urlIdentifier }, { alias: urlIdentifier }]
     });
 
-    if (!url || url.deleted) {
+    if (!url) {
       throw new NotFoundException('URL not found');
+    }
+
+    if (url.deleted) {
+      throw new GoneException('URL deleted');
     }
 
     if (url.rateLimit && url.rateLimit != 0 && url.accessCount >= url.rateLimit) {

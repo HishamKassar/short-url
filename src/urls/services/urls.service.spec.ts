@@ -87,10 +87,7 @@ describe('UrlsService', () => {
       expect(result).toEqual(url.originalUrl);
   
       expect(mockUrlModel.findOne).toHaveBeenCalledWith({
-        $and: [
-          { $or: [{ shortUrl }, { alias: shortUrl }] },
-          { deleted: { $ne: true } }
-        ]
+        $or: [{ shortUrl: shortUrl }, { alias: shortUrl }]
       });
 
       expect(saveMock).toHaveBeenCalled();
@@ -112,10 +109,7 @@ describe('UrlsService', () => {
 
       await expect(service.redirectUrl(shortUrl, req as any)).rejects.toThrow('URL not found');
       expect(mockUrlModel.findOne).toHaveBeenCalledWith({
-        $and: [
-          { $or: [{ shortUrl }, { alias: shortUrl }] },
-          { deleted: { $ne: true } }
-        ]
+        $or: [{ shortUrl: shortUrl }, { alias: shortUrl }]
       });
     });
   });
