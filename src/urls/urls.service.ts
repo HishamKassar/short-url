@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Url, UrlStats } from './interfaces/url.interface';
@@ -19,7 +19,7 @@ export class UrlsService {
     return createdUrl.shortUrl;
   }
   
-  async updateUrlAlias(shortUrl: string, alias: string): Promise<void> {
+  async updateUrlAlias(shortUrl: string, alias: string, rateLimit: number = null): Promise<void> {
     const urlAlias = await this.urlModel.findOne({
       $and: [
         { $or: [{ shortUrl: shortUrl }, { alias: shortUrl }] },
@@ -32,7 +32,7 @@ export class UrlsService {
 
     const url = await this.urlModel.findOneAndUpdate(
       { shortUrl },
-      { alias: alias },
+      { alias: alias, rateLimit: rateLimit },
       { new: true }
     );
 
@@ -67,6 +67,10 @@ export class UrlsService {
 
     if (!url || url.deleted) {
       throw new NotFoundException('URL not found');
+    }
+
+    if (url.rateLimit && url.rateLimit != 0 && url.accessCount >= url.rateLimit) {
+      throw new ForbiddenException('Request limit exceeded for this URL');
     }
     
     url.accessCount++;
@@ -118,6 +122,8 @@ export class UrlsService {
           shortUrl: url.shortUrl,
           alias: url.alias,
           accessCount: url.accessCount,
+          deleted: url.deleted,
+          rateLimit: url.rateLimit,
           stats: urlStats
       };
     });

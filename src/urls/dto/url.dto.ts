@@ -16,6 +16,9 @@ export class RedirectUrlDto {
 export class AliasDto {
     @ApiProperty()
     alias: string;
+
+    @ApiProperty()
+    reateLimit?: number;
 }
 
 export class StatGroupDto {
@@ -37,6 +40,12 @@ export class UrlStatsDto {
 
     @ApiProperty()
     accessCount: number;
+
+    @ApiProperty()
+    deleted?: boolean;
+
+    @ApiProperty()
+    reateLimit?: number;
 
     @ApiProperty()
     stats: StatGroupDto;

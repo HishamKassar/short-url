@@ -6,4 +6,5 @@ export const UrlSchema = new mongoose.Schema({
   alias: String,
   accessCount: { type: Number, default: 0 },
   deleted: { type: Boolean, default: false },
+  rateLimit: Number
 });

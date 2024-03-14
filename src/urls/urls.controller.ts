@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Redirect, Req, Put, HttpCode, Delete, Res, NotFoundException} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Redirect, Req, Put, HttpCode, Delete, Res, NotFoundException, ForbiddenException} from '@nestjs/common';
 import { UrlsService } from './urls.service';
 import { ShortenUrlDto, RedirectUrlDto, UrlStatsDto, AliasDto } from './dto/url.dto';
 import { Request } from 'express';
@@ -21,7 +21,7 @@ export class UrlsController {
 
   @Put(':shortUrl')
   @HttpCode(200) 
-  @ApiOperation({ summary: 'Set alais for short URL', description: 'Set alais by user for the short URL to be used same as auto generated short URL. You can pass shortUrl or Alias' })
+  @ApiOperation({ summary: 'Set alais and rate limit for short URL', description: 'Set alais by user for the short URL to be used same as auto generated short URL also you can set the rate limit for the URL. You can pass shortUrl or Alias' })
   @ApiResponse({ status: 200, description: 'Returns nothing' })
   @ApiResponse({ status: 400, description: 'Returns the error that happened' })
   @ApiResponse({ status: 404, description: 'Returns not found message if URL is not exist' })
@@ -31,7 +31,7 @@ export class UrlsController {
     if (shortUrl.includes(hostUrl)) {
       shortUrlToPass = shortUrl.replace(hostUrl, '');
     }
-    await this.urlsService.updateUrlAlias(shortUrlToPass, aliasDto.alias);
+    await this.urlsService.updateUrlAlias(shortUrlToPass, aliasDto.alias, aliasDto.reateLimit);
   }
 
   @Delete(':shortUrl')
@@ -59,9 +59,12 @@ export class UrlsController {
       return { url: originalUrl, statusCode: 302 };
     }
     catch (error) {
-      if (error as NotFoundException) {
+      if (error instanceof NotFoundException) {
         const notFoundHtml = req.protocol + "://" + req.get('host') + "/404.html";
         return { url: notFoundHtml, statusCode: 302 };
+      } else if (error instanceof ForbiddenException) {
+        const rateLimitHtml = req.protocol + "://" + req.get('host') + "/RateLimit.html";
+        return { url: rateLimitHtml, statusCode: 302 };
       }
       throw error;
     }
@@ -116,7 +119,7 @@ export class UrlsController {
     
     const urlStatsDtoArray: UrlStatsDto[] = urls.map((urlStats) => {
       
-      const { originalUrl, shortUrl, alias, accessCount, stats } = urlStats;   
+      const { originalUrl, shortUrl, alias, accessCount, deleted, rateLimit, stats } = urlStats;   
       const fullShortUrl = req.protocol + "://" + req.get('host') + req.originalUrl + "/" + shortUrl;
       const fullAlais = req.protocol + "://" + req.get('host') + req.originalUrl + "/" + alias; 
       return {
@@ -124,6 +127,8 @@ export class UrlsController {
         shortUrl: fullShortUrl,
         alias: fullAlais,
         accessCount,
+        deleted,
+        rateLimit,
         stats
       };
     });

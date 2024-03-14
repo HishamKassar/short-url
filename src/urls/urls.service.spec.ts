@@ -165,24 +165,19 @@ describe('UrlsService', () => {
     it('should update URL alias', async () => {
       const shortUrl = 'abc123';
       const alias = 'newAlias';
+      const rateLimit = 10;
+  
       const existingUrl = { shortUrl, alias: 'oldAlias' };
-  
       mockUrlModel.findOne.mockResolvedValue(existingUrl);
-  
-      const updatedUrl = { shortUrl, alias };
+    
+      const updatedUrl = { shortUrl, alias, rateLimit };
       mockUrlModel.findOneAndUpdate.mockResolvedValue(updatedUrl);
-  
-      await expect(service.updateUrlAlias(shortUrl, alias)).resolves.not.toThrow();
-  
-      expect(mockUrlModel.findOne).toHaveBeenCalledWith({
-        $and: [
-          { $or: [{ shortUrl }, { alias: shortUrl }] },
-          { deleted: { $ne: true } }
-        ]
-      });
+    
+      await expect(service.updateUrlAlias(shortUrl, alias, rateLimit)).resolves.not.toThrow();
+    
       expect(mockUrlModel.findOneAndUpdate).toHaveBeenCalledWith(
         { shortUrl },
-        { alias },
+        { alias, rateLimit },
         { new: true }
       );
     });

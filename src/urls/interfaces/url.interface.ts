@@ -6,7 +6,8 @@ export interface Url extends Document {
   shortUrl: string;
   alias: string;
   accessCount: number;
-  deleted: boolean;
+  deleted?: boolean;
+  rateLimit?: number;
 }
 
 export interface UrlStats {
@@ -14,5 +15,7 @@ export interface UrlStats {
   shortUrl: string;
   alias: string;
   accessCount: number;
+  deleted?: boolean;
+  rateLimit?: number;
   stats: StatGroup;
 }

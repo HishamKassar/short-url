@@ -82,12 +82,13 @@ describe('UrlsController', () => {
       it('should call updateUrlAlias in service with correct parameters', async () => {
         const shortUrl = 'abc123';
         const alias = 'alias';
-        const aliasDto: AliasDto = { alias };
+        const rateLimit = 10;
+        const aliasDto: AliasDto = { alias, reateLimit: 10 };
         const req: any = { protocol: 'http', get: jest.fn(), originalUrl: '/example' };
 
         await controller.updateUrlAlias(shortUrl, aliasDto, req);
   
-        expect(service.updateUrlAlias).toHaveBeenCalledWith(shortUrl, alias);
+        expect(service.updateUrlAlias).toHaveBeenCalledWith(shortUrl, alias, rateLimit);
       });
 
       it('should throw BadRequestException if alias already exists', async () => {
