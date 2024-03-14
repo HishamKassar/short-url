@@ -24,11 +24,26 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+The app will be running on the localhost on port 3000. In case you want to check the documentation please go to http://localhost:3000/swagger
+
+The API GET /api/v1/urls/{shortUrl} will not work on Swagger, so in case you want to check the functionality you need to check it directly on the browser.
+
+# Run the app using Docker
+
+## Install Docker
+
+```bash
+docker-compose build  
+```
+
+```bash
+docker-compose up -d
+```
 
 # Run the app on local machine
 
-## Install Docker
+## Install MongoDB
+Install MongoDB on your local machine
 
 ## Install packages
 
@@ -61,17 +76,3 @@ $ npm run test:e2e
 # test coverage
 $ npm run test:cov
 ```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).
