@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UrlsController } from './urls.controller';
-import { UrlsService } from './urls.service';
-import { ShortenUrlDto, RedirectUrlDto, UrlStatsDto, AliasDto } from './dto/url.dto';
+import { UrlsService } from '../services/urls.service';
+import { ShortenUrlDto, RedirectUrlDto, UrlStatsDto, AliasDto } from '../dto/url.dto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 
 describe('UrlsController', () => {

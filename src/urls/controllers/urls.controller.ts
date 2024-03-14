@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Param, Redirect, Req, Put, HttpCode, Delete, Res, NotFoundException, ForbiddenException} from '@nestjs/common';
-import { UrlsService } from './urls.service';
-import { ShortenUrlDto, RedirectUrlDto, UrlStatsDto, AliasDto } from './dto/url.dto';
+import { UrlsService } from '../services/urls.service';
+import { ShortenUrlDto, RedirectUrlDto, UrlStatsDto, AliasDto } from '../dto/url.dto';
 import { Request } from 'express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 

@@ -1,10 +1,10 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Url, UrlStats } from './interfaces/url.interface';
+import { Url, UrlStats } from '../interfaces/url.interface';
 import { nanoid } from 'nanoid';
 import { Request } from 'express';
-import { Stat } from './interfaces/stat.interface';
+import { Stat } from '../interfaces/stat.interface';
 
 @Injectable()
 export class UrlsService {
