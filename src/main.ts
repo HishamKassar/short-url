@@ -8,7 +8,7 @@ import { join } from 'path';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.use(express.static(join(__dirname, '..', 'assets')));
+  app.use(express.static(join(__dirname, '.', 'assets')));
   const options = new DocumentBuilder()
   .setTitle('URL Shortener API')
   .setDescription('API for shortening URLs and tracking statistics')

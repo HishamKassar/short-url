@@ -93,9 +93,9 @@ export class UrlsService {
       accessedAt: new Date()
     });
 
-    this.cacheManager.set(url.shortUrl, url.originalUrl, 3600000);
+    this.cacheManager.set(url.shortUrl, url.originalUrl, 600000); //10 minutes
     if (url.alias) {
-      this.cacheManager.set(url.alias, url.originalUrl, 3600000);
+      this.cacheManager.set(url.alias, url.originalUrl, 600000); //10 minutes
     }
     
     return url.originalUrl;
