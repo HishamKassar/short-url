@@ -30,6 +30,8 @@ The API GET /api/v1/urls/{shortUrl} will not work on Swagger, so in case you wan
 
 # Run the app using Docker
 
+After cloning the project go the folder using Terminal or CMD
+
 ## Install Docker
 
 ```bash
@@ -41,6 +43,8 @@ docker-compose up -d
 ```
 
 # Run the app on local machine
+
+After cloning the project go the folder using Terminal or CMD
 
 ## Install MongoDB
 Install MongoDB on your local machine

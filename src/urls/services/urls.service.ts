@@ -1,16 +1,19 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Url, UrlStats } from '../interfaces/url.interface';
 import { nanoid } from 'nanoid';
 import { Request } from 'express';
 import { Stat } from '../interfaces/stat.interface';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class UrlsService {
   constructor(
     @InjectModel('Url') private readonly urlModel: Model<Url>,
-    @InjectModel('Stat') private readonly statModel: Model<Stat>
+    @InjectModel('Stat') private readonly statModel: Model<Stat>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache
     ) {}
 
   async shortenUrl(originalUrl: string): Promise<string> {
@@ -58,6 +61,11 @@ export class UrlsService {
   }
 
   async redirectUrl(urlIdentifier: string, req:Request): Promise<string> {
+    const cachedOriginalUrl = await this.cacheManager.get(urlIdentifier);
+    if (cachedOriginalUrl) {
+      return cachedOriginalUrl as string;
+    }
+
     const url = await this.urlModel.findOne({
       $and: [
         { $or: [{ shortUrl: urlIdentifier }, { alias: urlIdentifier }] },
@@ -84,6 +92,11 @@ export class UrlsService {
       accessedAt: new Date()
     });
 
+    this.cacheManager.set(url.shortUrl, url.originalUrl, 3600000);
+    if (url.alias) {
+      this.cacheManager.set(url.alias, url.originalUrl, 3600000);
+    }
+    
     return url.originalUrl;
   }
 

@@ -6,6 +6,7 @@ import { UrlSchema } from './schemas/url.schema';
 import { StatSchema } from './schemas/stat.schema';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { APP_GUARD } from '@nestjs/core';
       { name: 'Url', schema: UrlSchema },
       { name: 'Stat', schema: StatSchema }
     ]),
+    CacheModule.register()
   ],
   controllers: [UrlsController],
   providers: [
