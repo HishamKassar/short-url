@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString, IsUrl } from 'class-validator';
+import { IsNotEmpty, IsString, IsUrl } from 'class-validator';
 
 export class ShortenUrlDto {
     @ApiProperty()
@@ -15,6 +15,7 @@ export class RedirectUrlDto {
 
 export class AliasDto {
     @ApiProperty()
+    @IsNotEmpty({ message: 'Must have a value' })
     alias: string;
 
     @ApiProperty()

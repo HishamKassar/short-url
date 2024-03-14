@@ -4,6 +4,8 @@ import { UrlsController } from './controllers/urls.controller';
 import { UrlsService } from './services/urls.service';
 import { UrlSchema } from './schemas/url.schema';
 import { StatSchema } from './schemas/stat.schema';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -13,6 +15,12 @@ import { StatSchema } from './schemas/stat.schema';
     ]),
   ],
   controllers: [UrlsController],
-  providers: [UrlsService],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard
+    },
+    UrlsService
+  ],
 })
 export class UrlsModule {}
